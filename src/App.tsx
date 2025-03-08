@@ -1,46 +1,62 @@
 import { useCallback, useEffect, useState } from '@lynx-js/react';
-
 import './App.css';
-import arrow from './assets/arrow.png';
-import lynxLogo from './assets/lynx-logo.png';
-import reactLynxLogo from './assets/react-logo.png';
+
+interface Advice {
+  slip: {
+    id: number;
+    advice: string;
+  };
+}
+
+const fetchAdvice = async (): Promise<string> => {
+  try {
+    const request = new Request('https://api.adviceslip.com/advice');
+    const response = await fetch(request);
+    if (!response.ok) {
+      throw new Error('Network response was not ok');
+    }
+    const data = (await response.json()) as Advice;
+    return data.slip.advice;
+  } catch (error) {
+    return 'Failed to fetch advice';
+  }
+};
 
 export function App() {
-  const [alterLogo, setAlterLogo] = useState(false);
+  const [advice, setAdvice] = useState('');
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    console.info('Hello, ReactLynx');
+    fetchAdvice().then((data) => {
+      setAdvice(data);
+      setIsLoading(false);
+    });
   }, []);
 
   const onTap = useCallback(() => {
-    'background only';
-    setAlterLogo(!alterLogo);
-  }, [alterLogo]);
+    setIsLoading(true);
+    fetchAdvice().then((data) => {
+      setAdvice(data);
+      setIsLoading(false);
+    });
+  }, []);
 
   return (
     <view>
-      <view className="Background" />
-      <view className="App">
-        <view className="Banner">
-          <view className="Logo" bindtap={onTap}>
-            {alterLogo ? (
-              <image src={reactLynxLogo} className="Logo--react" />
-            ) : (
-              <image src={lynxLogo} className="Logo--lynx" />
-            )}
-          </view>
-          <text className="Title">React</text>
-          <text className="Subtitle">on Lynx</text>
+      <view className="header">
+        <text className="header-title">Advice Generator</text>
+      </view>
+      <view className="container">
+        <view className="advice-card">
+          {isLoading ? (
+            <text className="advice-card-text">Loading...</text>
+          ) : (
+            <text className="advice-card-text">{advice}</text>
+          )}
         </view>
-        <view className="Content">
-          <image src={arrow} className="Arrow" />
-          <text className="Description">Tap the logo and have fun!</text>
-          <text className="Hint">
-            Edit<text style={{ fontStyle: 'italic' }}>{' src/App.tsx '}</text>
-            to see updates!
-          </text>
+        <view className="button" bindtap={onTap}>
+          <text className="button-text">Get Advice</text>
         </view>
-        <view style={{ flex: 1 }}></view>
       </view>
     </view>
   );
